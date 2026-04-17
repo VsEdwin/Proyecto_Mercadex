@@ -108,8 +108,7 @@
                   </a>
 
                   @if($producto->activo)
-                    <form action="{{ route('productos.destroy', $producto) }}" method="POST"
-                          onsubmit="return confirm('¿Eliminar «{{ $producto->nombre }}»?')">
+                    <form action="{{ route('productos.destroy', $producto) }}" method="POST" class="form-delete">
                       @csrf @method('DELETE')
                       <button type="submit" class="action-btn danger">🗑</button>
                     </form>

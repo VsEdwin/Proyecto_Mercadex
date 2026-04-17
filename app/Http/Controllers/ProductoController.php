@@ -1,6 +1,8 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\Producto;
+use App\Models\Categoria;
+use App\Models\Proveedor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -14,7 +16,9 @@ class ProductoController extends Controller
 
     public function create()
     {
-        return view('productos.create');
+        $categorias  = Categoria::all();
+        $proveedores = Proveedor::where('activo', true)->get();
+        return view('productos.create', compact('categorias', 'proveedores'));
     }
 
     public function store(Request $request)
@@ -39,7 +43,9 @@ class ProductoController extends Controller
 
     public function edit(Producto $producto)
     {
-        return view('productos.edit', compact('producto'));
+        $categorias  = Categoria::all();
+        $proveedores = Proveedor::where('activo', true)->get();
+        return view('productos.edit', compact('producto', 'categorias', 'proveedores'));
     }
 
     public function update(Request $request, Producto $producto)
@@ -48,13 +54,17 @@ class ProductoController extends Controller
             'nombre' => 'required',
             'precio' => 'required|numeric|min:0',
             'stock'  => 'required|integer|min:0',
+            'costo'  => 'nullable|numeric|min:0',
         ]);
 
         $producto->update([
-            'nombre'      => $request->nombre,
-            'descripcion' => $request->descripcion,
-            'precio'      => $request->precio,
-            'stock'       => $request->stock,
+            'nombre'       => $request->nombre,
+            'descripcion'  => $request->descripcion,
+            'precio'       => $request->precio,
+            'costo'        => $request->costo ?? 0,
+            'stock'        => $request->stock,
+            'categoria_id' => $request->categoria_id,  // ← ¿tienes estas dos líneas?
+            'proveedor_id' => $request->proveedor_id,  // ← ¿tienes estas dos líneas?
         ]);
 
         return redirect()->route('productos.index')

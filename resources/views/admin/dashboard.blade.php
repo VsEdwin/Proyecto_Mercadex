@@ -35,6 +35,16 @@
     <div class="stat-value">{{ now()->format('d/m') }}</div>
     <div class="stat-label">Hoy</div>
   </div>
+  <div class="stat-card">
+    <span class="stat-icon">📉</span>
+    <div class="stat-value">${{ number_format($totalInversion, 2) }}</div>
+    <div class="stat-label">Inversión en stock</div>
+    </div>
+    <div class="stat-card">
+        <span class="stat-icon">📈</span>
+        <div class="stat-value">${{ number_format($totalGanancia, 2) }}</div>
+        <div class="stat-label">Ganancia potencial</div>
+    </div>
 </div>
 
 {{-- Acciones principales --}}

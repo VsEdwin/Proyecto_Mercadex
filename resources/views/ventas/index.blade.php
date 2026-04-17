@@ -107,8 +107,7 @@
                         <div class="actions-wrap">
                             <a href="{{ route('ventas.show', $venta) }}" class="action-btn view">👁 Ver</a>
                             <a href="{{ route('ventas.ticket', $venta) }}" class="action-btn ticket">🧾 Ticket</a>
-                            <form action="{{ route('ventas.destroy', $venta) }}" method="POST" class="d-inline"
-                                onsubmit="return confirm('¿Eliminar la venta #{{ $venta->id }}?')">
+                            <form action="{{ route('ventas.destroy', $venta) }}" method="POST" class="form-delete">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="action-btn danger">🗑 Eliminar</button>
                             </form>

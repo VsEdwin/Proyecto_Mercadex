@@ -7,7 +7,6 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ asset('css/app.css') }}">
-
 </head>
 <body>
 
@@ -36,7 +35,6 @@
             Productos
           </a>
         </li>
-        {{-- ← Agregar esta línea --}}
         <li class="nav-item">
           <a href="{{ route('ventas.index') }}" class="{{ request()->routeIs('ventas.*') ? 'active' : '' }}">
             Ventas
@@ -45,6 +43,16 @@
         <li class="nav-item">
           <a href="{{ route('admin.usuarios') }}" class="{{ request()->routeIs('admin.usuarios*') ? 'active' : '' }}">
             Usuarios
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{{ route('proveedores.index') }}" class="{{ request()->routeIs('proveedores.*') ? 'active' : '' }}">
+            Proveedores
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{{ route('categorias.index') }}" class="{{ request()->routeIs('categorias.*') ? 'active' : '' }}">
+            Categorías
           </a>
         </li>
       @endif
@@ -66,19 +74,6 @@
           </a>
         </li>
       @endif
-
-      <!-- @if(Auth::user()->role === 'cliente')
-        <li class="nav-item">
-          <a href="{{ route('cliente.dashboard') }}" class="{{ request()->routeIs('cliente.dashboard') ? 'active' : '' }}">
-            Inicio
-          </a>
-        </li>
-        <li class="nav-item">
-          <a href="{{ route('cliente.productos') }}" class="{{ request()->routeIs('cliente.productos') ? 'active' : '' }}">
-            Productos
-          </a>
-        </li>
-      @endif -->
     </ul>
 
     {{-- Usuario + logout --}}
@@ -104,5 +99,122 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+    // ── Confirmaciones de eliminación ──────────────────
+    document.querySelectorAll('.form-delete').forEach(form => {
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        Swal.fire({
+          title: '¿Estás seguro?',
+          text: 'Esta acción no se puede deshacer.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Sí, eliminar',
+          cancelButtonText: 'Cancelar',
+          confirmButtonColor: '#ef4444',
+          cancelButtonColor: '#6b7280',
+          background: '#1a1200',
+          color: '#fff',
+          iconColor: '#f97316',
+        }).then((result) => {
+          if (result.isConfirmed) {
+            form.submit();
+          }
+        });
+      });
+    });
+
+    // ── Mensajes de sesión ──────────────────────────────
+    const successMsg = "{{ session('success') }}";
+    const errorMsg   = "{{ session('error') }}";
+
+    if (successMsg) {
+      Swal.fire({
+        icon: 'success',
+        title: '¡Listo!',
+        text: successMsg,
+        timer: 2500,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        background: '#1a1200',
+        color: '#fff',
+        iconColor: '#22c55e',
+      });
+    }
+
+    if (errorMsg) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: errorMsg,
+        background: '#1a1200',
+        color: '#fff',
+        iconColor: '#ef4444',
+        confirmButtonColor: '#f97316',
+      });
+    }
+  </script>
+
+  {{-- Alertas de stock bajo solo para admin --}}
+  @auth
+  @if(Auth::user()->role === 'admin')
+  @php
+    $sinStock  = \App\Models\Producto::where('activo', true)->where('stock', 0)->get();
+    $stockBajo = \App\Models\Producto::where('activo', true)->where('stock', '<=', 5)->where('stock', '>', 0)->get();
+  @endphp
+
+  <div id="stock-data"
+       data-sin-stock="{{ $sinStock->count() }}"
+       data-stock-bajo="{{ $stockBajo->count() }}"
+       data-sin-stock-nombres="{{ $sinStock->pluck('nombre')->implode(', ') }}"
+       data-stock-bajo-detalle="{{ $stockBajo->map(fn($p) => $p->nombre.' ('.$p->stock.' uds.)')->implode(', ') }}"
+       data-productos-url="{{ route('productos.index') }}"
+       style="display:none;">
+  </div>
+
+  <script>
+    window.addEventListener('load', () => {
+      const el        = document.getElementById('stock-data');
+      if (!el) return;
+      const sinStock  = parseInt(el.dataset.sinStock);
+      const stockBajo = parseInt(el.dataset.stockBajo);
+      const nombres   = el.dataset.sinStockNombres;
+      const detalle   = el.dataset.stockBajoDetalle;
+      const url       = el.dataset.productosUrl;
+
+      if (sinStock > 0) {
+        Swal.fire({
+          icon: 'error',
+          title: '⚠ Productos agotados',
+          html: '<p style="color:rgba(255,255,255,0.7);margin-bottom:8px;">Productos sin stock:</p><p style="color:#fca5a5;">' + nombres + '</p>',
+          background: '#1a1200',
+          color: '#fff',
+          confirmButtonColor: '#f97316',
+          confirmButtonText: 'Ver productos',
+        }).then(() => { window.location.href = url; });
+
+      } else if (stockBajo > 0) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Stock bajo',
+          html: '<p style="color:rgba(255,255,255,0.7);margin-bottom:8px;">Poco stock en:</p><p style="color:#fdba74;">' + detalle + '</p>',
+          background: '#1a1200',
+          color: '#fff',
+          confirmButtonColor: '#f97316',
+          confirmButtonText: 'Revisar',
+          showCancelButton: true,
+          cancelButtonText: 'Ignorar',
+          cancelButtonColor: '#6b7280',
+        }).then((result) => {
+          if (result.isConfirmed) window.location.href = url;
+        });
+      }
+    });
+  </script>
+  @endif
+  @endauth
+
 </body>
 </html>

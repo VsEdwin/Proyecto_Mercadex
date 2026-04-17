@@ -2,7 +2,12 @@
 @section('content')
 
 <style>
-  
+  .stock-section {
+    background: rgba(249,115,22,0.05);
+    border: 1px solid rgba(249,115,22,0.15);
+    border-radius: 14px;
+    padding: 1rem 1.2rem;
+  }
 </style>
 
 {{-- Header --}}
@@ -62,13 +67,54 @@
           @error('descripcion') <div class="field-error">⚠ {{ $message }}</div> @enderror
         </div>
 
-        {{-- Stock y Precio --}}
+        {{-- Categoría y Proveedor --}}
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
 
-          {{-- Stock (destacado) --}}
+          <div class="field-group">
+            <label class="field-label" for="categoria_id">Categoría</label>
+            <div class="field-wrap">
+              <select id="categoria_id" name="categoria_id" class="field-input"
+                style="padding-left:2.5rem; cursor:pointer; appearance:none; -webkit-appearance:none;">
+                <option value="">Sin categoría</option>
+                @foreach($categorias as $cat)
+                  <option value="{{ $cat->id }}"
+                    {{ old('categoria_id', $producto->categoria_id) == $cat->id ? 'selected' : '' }}>
+                    {{ $cat->nombre }}
+                  </option>
+                @endforeach
+              </select>
+              <span class="field-icon">🏷</span>
+            </div>
+            @error('categoria_id') <div class="field-error">⚠ {{ $message }}</div> @enderror
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="proveedor_id">Proveedor</label>
+            <div class="field-wrap">
+              <select id="proveedor_id" name="proveedor_id" class="field-input"
+                style="padding-left:2.5rem; cursor:pointer; appearance:none; -webkit-appearance:none;">
+                <option value="">Sin proveedor</option>
+                @foreach($proveedores as $prov)
+                  <option value="{{ $prov->id }}"
+                    {{ old('proveedor_id', $producto->proveedor_id) == $prov->id ? 'selected' : '' }}>
+                    {{ $prov->nombre }}
+                  </option>
+                @endforeach
+              </select>
+              <span class="field-icon">🏭</span>
+            </div>
+            @error('proveedor_id') <div class="field-error">⚠ {{ $message }}</div> @enderror
+          </div>
+
+        </div>
+
+        {{-- Stock, Costo y Precio --}}
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+
+          {{-- Stock destacado --}}
           <div>
             <div class="stock-section">
-              <label class="field-label" for="stock">📦 Stock actual</label>
+              <label class="field-label" for="stock" style="color:#f97316;">📦 Stock actual</label>
               <div class="field-wrap">
                 <input type="number" id="stock" name="stock" class="field-input"
                   placeholder="0" min="0"
@@ -76,16 +122,28 @@
                   required oninput="updatePreview()">
                 <span class="field-icon">🗂</span>
               </div>
-              <p class="field-hint" style="color:rgba(249,115,22,0.5);">
-                Unidades disponibles en inventario
-              </p>
+              <p class="field-hint" style="color:rgba(249,115,22,0.5);">Unidades en inventario</p>
             </div>
             @error('stock') <div class="field-error">⚠ {{ $message }}</div> @enderror
           </div>
 
+          {{-- Costo --}}
+          <div class="field-group">
+            <label class="field-label" for="costo">Costo de compra</label>
+            <div class="field-wrap">
+              <input type="number" id="costo" name="costo" class="field-input"
+                placeholder="0.00" step="0.01" min="0"
+                value="{{ old('costo', $producto->costo) }}"
+                oninput="updatePreview()">
+              <span class="input-prefix">$</span>
+            </div>
+            <p class="field-hint">Lo que pagas al proveedor</p>
+            @error('costo') <div class="field-error">⚠ {{ $message }}</div> @enderror
+          </div>
+
           {{-- Precio --}}
           <div class="field-group">
-            <label class="field-label" for="precio">Precio (MXN)</label>
+            <label class="field-label" for="precio">Precio de venta</label>
             <div class="field-wrap">
               <input type="number" id="precio" name="precio" class="field-input"
                 placeholder="0.00" step="0.01" min="0"
@@ -93,7 +151,7 @@
                 required oninput="updatePreview()">
               <span class="input-prefix">$</span>
             </div>
-            <p class="field-hint">Precio de venta al público</p>
+            <p class="field-hint">Precio al público</p>
             @error('precio') <div class="field-error">⚠ {{ $message }}</div> @enderror
           </div>
 
@@ -112,8 +170,18 @@
           <div class="preview-name" id="prev-name">{{ $producto->nombre }}</div>
           <div class="preview-desc" id="prev-desc">{{ $producto->descripcion ?: 'Sin descripción' }}</div>
           <div class="preview-row">
-            <span class="preview-row-label">Precio</span>
+            <span class="preview-row-label">Costo</span>
+            <span class="preview-row-val" id="prev-costo">${{ number_format($producto->costo, 2) }}</span>
+          </div>
+          <div class="preview-row">
+            <span class="preview-row-label">Precio venta</span>
             <span class="preview-row-val price" id="prev-price">${{ number_format($producto->precio, 2) }}</span>
+          </div>
+          <div class="preview-row">
+            <span class="preview-row-label">Ganancia unit.</span>
+            <span class="preview-row-val" id="prev-ganancia" style="color:#22c55e;">
+              ${{ number_format($producto->precio - $producto->costo, 2) }}
+            </span>
           </div>
           <div class="preview-row">
             <span class="preview-row-label">Stock</span>
@@ -141,15 +209,22 @@
 
 <script>
   function updatePreview() {
-    const name  = document.getElementById('nombre').value.trim();
-    const desc  = document.getElementById('descripcion').value.trim();
-    const stock = document.getElementById('stock').value;
-    const price = parseFloat(document.getElementById('precio').value);
+    const name     = document.getElementById('nombre').value.trim();
+    const desc     = document.getElementById('descripcion').value.trim();
+    const stock    = document.getElementById('stock').value;
+    const precio   = parseFloat(document.getElementById('precio').value) || 0;
+    const costo    = parseFloat(document.getElementById('costo').value)  || 0;
+    const ganancia = precio - costo;
 
     document.getElementById('prev-name').textContent  = name  || '—';
     document.getElementById('prev-desc').textContent  = desc  || 'Sin descripción';
     document.getElementById('prev-stock').textContent = (stock !== '' ? stock : '0') + ' uds.';
-    document.getElementById('prev-price').textContent = isNaN(price) ? '$0.00' : '$' + price.toFixed(2);
+    document.getElementById('prev-price').textContent = '$' + precio.toFixed(2);
+    document.getElementById('prev-costo').textContent = '$' + costo.toFixed(2);
+
+    const ganEl = document.getElementById('prev-ganancia');
+    ganEl.textContent = '$' + ganancia.toFixed(2);
+    ganEl.style.color = ganancia >= 0 ? '#22c55e' : '#ef4444';
   }
 </script>
 

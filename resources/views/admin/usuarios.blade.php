@@ -420,8 +420,7 @@
             @if($usuario->id === Auth::id())
               <span class="self-badge">Tú mismo</span>
             @else
-              <form action="{{ route('admin.usuarios.destroy', $usuario) }}" method="POST" class="d-inline"
-                    onsubmit="return confirm('¿Eliminar al usuario {{ $usuario->name }}?')">
+              <form action="{{ route('admin.usuarios.destroy', $usuario) }}" method="POST" class="form-delete">
                 @csrf @method('DELETE')
                 <button type="submit" class="action-btn danger">🗑 Eliminar</button>
               </form>

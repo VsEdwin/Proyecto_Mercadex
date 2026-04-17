@@ -4080,3 +4080,13 @@ html {
   @media (max-width: 860px) {
     .form-layout { grid-template-columns: 1fr; }
   }
+select.field-input {
+  background-color: #1a1200;
+  color: #fff;
+  background-image: none;
+}
+
+select.field-input option {
+  background-color: #1a1200;
+  color: #fff;
+}

@@ -17,8 +17,18 @@ class AdminController extends Controller
         $totalIngresos  = Venta::sum('total');
         $ventasHoy      = Venta::whereDate('created_at', today())->count();
 
+        // ← Nuevos datos financieros
+        $totalInversion  = Producto::where('activo', true)
+                                ->selectRaw('SUM(costo * stock) as total')
+                                ->value('total') ?? 0;
+
+        $totalGanancia   = Producto::where('activo', true)
+                                ->selectRaw('SUM((precio - costo) * stock) as total')
+                                ->value('total') ?? 0;
+
         return view('admin.dashboard',
-        compact('totalProductos','totalVentas','totalUsuarios','totalIngresos','ventasHoy'));
+        compact('totalProductos','totalVentas','totalUsuarios','totalIngresos','ventasHoy',
+        'totalInversion', 'totalGanancia'));
     }
     public function usuarios()
     {
