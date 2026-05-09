@@ -5,7 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 class Producto extends Model
 {
     protected $fillable = ['nombre', 'descripcion', 'precio', 'stock', 'activo','costo','proveedor_id',
-    'categoria_id'];
+    'categoria_id','subcategoria_id'];
 
     public function proveedor()
     {
@@ -38,5 +38,10 @@ class Producto extends Model
     public function ventas()
     {
         return $this->hasMany(Venta::class);
+    }
+
+    public function subcategoria()
+    {
+        return $this->belongsTo(Categoria::class, 'subcategoria_id');
     }
 }

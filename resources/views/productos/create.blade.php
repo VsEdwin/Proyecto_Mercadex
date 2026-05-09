@@ -21,6 +21,18 @@
   </div>
 @endif
 
+{{-- Datos de subcategorías para JavaScript --}}
+<div id="subcats-data"
+     data-subcats="{{ json_encode($categorias->mapWithKeys(fn($cat) => [
+       $cat->id => $cat->subcategorias->map(fn($sub) => [
+         'id'     => $sub->id,
+         'nombre' => $sub->nombre
+       ])->values()
+     ])) }}"
+     data-subcat-actual="{{ old('subcategoria_id') }}"
+     style="display:none;">
+</div>
+
 <form method="POST" action="{{ route('productos.store') }}" id="prodForm">
   @csrf
   <div class="form-layout">
@@ -35,7 +47,7 @@
           <label class="field-label" for="nombre">Nombre del producto</label>
           <div class="field-wrap">
             <input type="text" id="nombre" name="nombre" class="field-input"
-              placeholder="Ej. Camiseta manga corta"
+              placeholder="Ej. Coca Cola 600ml"
               value="{{ old('nombre') }}" required
               oninput="updatePreview()">
             <span class="field-icon">📦</span>
@@ -55,43 +67,61 @@
           @error('descripcion') <div class="field-error">⚠ {{ $message }}</div> @enderror
         </div>
 
-        {{-- Categoría y Proveedor --}}
+        {{-- Categoría y Subcategoría --}}
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
 
+          {{-- Categoría padre --}}
           <div class="field-group">
             <label class="field-label" for="categoria_id">Categoría</label>
             <div class="field-wrap">
               <select id="categoria_id" name="categoria_id" class="field-input"
-                style="padding-left:2.5rem; cursor:pointer; appearance:none; -webkit-appearance:none;">
+                style="padding-left:2.5rem; cursor:pointer; appearance:none; -webkit-appearance:none;"
+                onchange="cargarSubcategorias(this)">
                 <option value="">Sin categoría</option>
                 @foreach($categorias as $cat)
-                  <option value="{{ $cat->id }}" {{ old('categoria_id') == $cat->id ? 'selected' : '' }}>
+                  <option value="{{ $cat->id }}"
+                    {{ old('categoria_id') == $cat->id ? 'selected' : '' }}>
                     {{ $cat->nombre }}
                   </option>
                 @endforeach
               </select>
-              <span class="field-icon">🏷</span>
+              <span class="field-icon">📁</span>
             </div>
             @error('categoria_id') <div class="field-error">⚠ {{ $message }}</div> @enderror
           </div>
 
+          {{-- Subcategoría --}}
           <div class="field-group">
-            <label class="field-label" for="proveedor_id">Proveedor</label>
+            <label class="field-label" for="subcategoria_id">Subcategoría</label>
             <div class="field-wrap">
-              <select id="proveedor_id" name="proveedor_id" class="field-input"
+              <select id="subcategoria_id" name="subcategoria_id" class="field-input"
                 style="padding-left:2.5rem; cursor:pointer; appearance:none; -webkit-appearance:none;">
-                <option value="">Sin proveedor</option>
-                @foreach($proveedores as $prov)
-                  <option value="{{ $prov->id }}" {{ old('proveedor_id') == $prov->id ? 'selected' : '' }}>
-                    {{ $prov->nombre }}
-                  </option>
-                @endforeach
+                <option value="">Sin subcategoría</option>
               </select>
-              <span class="field-icon">🏭</span>
+              <span class="field-icon">🔖</span>
             </div>
-            @error('proveedor_id') <div class="field-error">⚠ {{ $message }}</div> @enderror
+            @error('subcategoria_id') <div class="field-error">⚠ {{ $message }}</div> @enderror
           </div>
 
+        </div>
+
+        {{-- Proveedor --}}
+        <div class="field-group">
+          <label class="field-label" for="proveedor_id">Proveedor</label>
+          <div class="field-wrap">
+            <select id="proveedor_id" name="proveedor_id" class="field-input"
+              style="padding-left:2.5rem; cursor:pointer; appearance:none; -webkit-appearance:none;">
+              <option value="">Sin proveedor</option>
+              @foreach($proveedores as $prov)
+                <option value="{{ $prov->id }}"
+                  {{ old('proveedor_id') == $prov->id ? 'selected' : '' }}>
+                  {{ $prov->nombre }}
+                </option>
+              @endforeach
+            </select>
+            <span class="field-icon">🏭</span>
+          </div>
+          @error('proveedor_id') <div class="field-error">⚠ {{ $message }}</div> @enderror
         </div>
 
         {{-- Stock, Costo y Precio --}}
@@ -187,6 +217,32 @@
 </form>
 
 <script>
+  // ── Subcategorías dinámicas ──────────────────────────
+  const subcatsEl    = document.getElementById('subcats-data');
+  const subcategorias = JSON.parse(subcatsEl.dataset.subcats);
+  const subcatActual  = subcatsEl.dataset.subcatActual;
+
+  function cargarSubcategorias(select) {
+    const catId  = select.value;
+    const subSel = document.getElementById('subcategoria_id');
+    const subs   = subcategorias[catId] || [];
+
+    subSel.innerHTML = '<option value="">Sin subcategoría</option>';
+
+    subs.forEach(function(sub) {
+      const opt       = document.createElement('option');
+      opt.value       = sub.id;
+      opt.textContent = sub.nombre;
+      if (String(sub.id) === String(subcatActual)) opt.selected = true;
+      subSel.appendChild(opt);
+    });
+  }
+
+  // Cargar subcategorías al inicio si ya hay categoría seleccionada
+  const catSelect = document.getElementById('categoria_id');
+  if (catSelect.value) cargarSubcategorias(catSelect);
+
+  // ── Vista previa ────────────────────────────────────
   function updatePreview() {
     const name     = document.getElementById('nombre').value.trim();
     const desc     = document.getElementById('descripcion').value.trim();

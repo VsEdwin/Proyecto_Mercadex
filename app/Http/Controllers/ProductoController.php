@@ -16,7 +16,7 @@ class ProductoController extends Controller
 
     public function create()
     {
-        $categorias  = Categoria::all();
+        $categorias  = Categoria::padres()->with('subcategorias')->get();
         $proveedores = Proveedor::where('activo', true)->get();
         return view('productos.create', compact('categorias', 'proveedores'));
     }
@@ -35,6 +35,8 @@ class ProductoController extends Controller
             'precio'      => $request->precio,
             'stock'       => $request->stock,
             'activo'      => true,
+            'categoria_id'    => $request->categoria_id,
+            'subcategoria_id' => $request->subcategoria_id,
         ]);
 
         return redirect()->route('productos.index')
@@ -43,7 +45,7 @@ class ProductoController extends Controller
 
     public function edit(Producto $producto)
     {
-        $categorias  = Categoria::all();
+        $categorias  = Categoria::padres()->with('subcategorias')->get();
         $proveedores = Proveedor::where('activo', true)->get();
         return view('productos.edit', compact('producto', 'categorias', 'proveedores'));
     }
@@ -65,6 +67,7 @@ class ProductoController extends Controller
             'stock'        => $request->stock,
             'categoria_id' => $request->categoria_id,  // ← ¿tienes estas dos líneas?
             'proveedor_id' => $request->proveedor_id,  // ← ¿tienes estas dos líneas?
+            'subcategoria_id' => $request->subcategoria_id,
         ]);
 
         return redirect()->route('productos.index')
