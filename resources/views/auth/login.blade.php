@@ -76,16 +76,16 @@
             @enderror
           </div>
 
-          <!-- {{-- Opciones --}}
+          {{-- Opciones --}}
           <div class="form-options">
-            <label class="remember-label">
+            <!-- <label class="remember-label">
               <input type="checkbox" name="remember" {{ old('remember') ? 'checked' : '' }}>
               Recordarme
-            </label>
-            @if (Route::has('password.request'))
-            <a href="{{ route('password.request') }}" class="forgot-link">¿Olvidaste tu contraseña?</a>
+            </label> -->
+             @if (Route::has('password.request'))
+              <a href="{{ route('password.request') }}" class="forgot-link">¿Olvidaste tu contraseña?</a>
             @endif
-          </div> -->
+          </div>
 
           <button type="submit" class="btn-submit">Iniciar sesión →</button>
 
