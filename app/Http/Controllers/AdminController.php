@@ -65,10 +65,15 @@ class AdminController extends Controller
     public function destroyUsuario(User $user)
     {
         if ($user->id === Auth::id()) {
-            return back()->withErrors(['error' => 'No puedes eliminarte a ti mismo.']);
+            return back()->with('error', 'No puedes eliminarte a ti mismo.');
         }
+
+        // Desvincular ventas — poner user_id en null
+        $user->ventas()->update(['user_id' => null]);
+
         $user->delete();
+
         return redirect()->route('admin.usuarios')
-            ->with('success', "Usuario {$user->name} eliminado.");
+            ->with('success', "Usuario {$user->name} eliminado correctamente.");
     }
 }
