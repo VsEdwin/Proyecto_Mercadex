@@ -24,23 +24,34 @@ class ProductoController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nombre' => 'required',
-            'precio' => 'required|numeric|min:0',
-            'stock'  => 'required|integer|min:0',
+            'nombre'                   => 'required',
+            'precio'                   => 'required|numeric|min:0',
+            'stock'                    => 'required|integer|min:0',
+            'costo'                    => 'nullable|numeric|min:0',
+            'presentacion'             => 'required|in:unidad,caja,paquete',
+            'unidades_por_presentacion'=> 'required|integer|min:1',
         ]);
 
+        // Si compras 3 cajas de 24 unidades → stock real = 72
+        $unidadesPorPresentacion = $request->unidades_por_presentacion;
+        $stockReal = $request->stock * $unidadesPorPresentacion;
+
         Producto::create([
-            'nombre'      => $request->nombre,
-            'descripcion' => $request->descripcion,
-            'precio'      => $request->precio,
-            'stock'       => $request->stock,
-            'activo'      => true,
-            'categoria_id'    => $request->categoria_id,
-            'subcategoria_id' => $request->subcategoria_id,
+            'nombre'                    => $request->nombre,
+            'descripcion'               => $request->descripcion,
+            'precio'                    => $request->precio,
+            'costo'                     => $request->costo ?? 0,
+            'stock'                     => $stockReal, // ← stock en unidades reales
+            'activo'                    => true,
+            'categoria_id'              => $request->categoria_id,
+            'subcategoria_id'           => $request->subcategoria_id,
+            'proveedor_id'              => $request->proveedor_id,
+            'presentacion'              => $request->presentacion,
+            'unidades_por_presentacion' => $unidadesPorPresentacion,
         ]);
 
         return redirect()->route('productos.index')
-            ->with('success', 'Producto creado correctamente');
+            ->with('success', 'Producto creado correctamente.');
     }
 
     public function edit(Producto $producto)
@@ -53,25 +64,32 @@ class ProductoController extends Controller
     public function update(Request $request, Producto $producto)
     {
         $request->validate([
-            'nombre' => 'required',
-            'precio' => 'required|numeric|min:0',
-            'stock'  => 'required|integer|min:0',
-            'costo'  => 'nullable|numeric|min:0',
+            'nombre'                    => 'required',
+            'precio'                    => 'required|numeric|min:0',
+            'stock'                     => 'required|integer|min:0',
+            'costo'                     => 'nullable|numeric|min:0',
+            'presentacion'              => 'required|in:unidad,caja,paquete',
+            'unidades_por_presentacion' => 'required|integer|min:1',
         ]);
 
+        $unidadesPorPresentacion = $request->unidades_por_presentacion;
+        $stockReal = $request->stock * $unidadesPorPresentacion;
+
         $producto->update([
-            'nombre'       => $request->nombre,
-            'descripcion'  => $request->descripcion,
-            'precio'       => $request->precio,
-            'costo'        => $request->costo ?? 0,
-            'stock'        => $request->stock,
-            'categoria_id' => $request->categoria_id,  // ← ¿tienes estas dos líneas?
-            'proveedor_id' => $request->proveedor_id,  // ← ¿tienes estas dos líneas?
-            'subcategoria_id' => $request->subcategoria_id,
+            'nombre'                    => $request->nombre,
+            'descripcion'               => $request->descripcion,
+            'precio'                    => $request->precio,
+            'costo'                     => $request->costo ?? 0,
+            'stock'                     => $stockReal,
+            'categoria_id'              => $request->categoria_id,
+            'subcategoria_id'           => $request->subcategoria_id,
+            'proveedor_id'              => $request->proveedor_id,
+            'presentacion'              => $request->presentacion,
+            'unidades_por_presentacion' => $unidadesPorPresentacion,
         ]);
 
         return redirect()->route('productos.index')
-            ->with('success', 'Producto actualizado correctamente');
+            ->with('success', 'Producto actualizado correctamente.');
     }
 
     // ← NUEVO: actualizar solo el stock desde la tabla

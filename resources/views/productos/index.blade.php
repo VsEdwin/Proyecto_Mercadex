@@ -2,7 +2,6 @@
 @section('content')
 
 <style>
-  
 </style>
 
 {{-- Header --}}
@@ -40,6 +39,7 @@
           <th>ID</th>
           <th>Producto</th>
           <th>Descripción</th>
+          <th class="center">Presentación</th>
           <th class="center">Precio</th>
           <th class="center">Stock</th>
           <th class="center">Estado</th>
@@ -52,12 +52,38 @@
           <td><span class="id-chip">{{ $producto->id }}</span></td>
           <td>
             <div class="prod-name">{{ $producto->nombre }}</div>
+            {{-- Categoría y subcategoría --}}
+            @if($producto->categoria)
+              <div class="prod-desc" style="margin-top:0.2rem;">
+                📁 {{ $producto->categoria->nombre }}
+                @if($producto->subcategoria)
+                  → 🔖 {{ $producto->subcategoria->nombre }}
+                @endif
+              </div>
+            @endif
           </td>
           <td>
             <div class="prod-desc" title="{{ $producto->descripcion }}">
               {{ $producto->descripcion ?: '—' }}
             </div>
           </td>
+
+          {{-- Presentación --}}
+          <td class="center">
+            @php
+              $iconos = ['unidad' => '📦', 'caja' => '📫', 'paquete' => '🎁'];
+              $icon   = $iconos[$producto->presentacion] ?? '📦';
+            @endphp
+            <div style="font-size:0.8rem; color:rgba(255,255,255,0.6); line-height:1.4;">
+              {{ $icon }} {{ ucfirst($producto->presentacion ?? 'unidad') }}
+              @if(($producto->unidades_por_presentacion ?? 1) > 1)
+                <div style="color:rgba(249,115,22,0.8); font-size:0.72rem; font-weight:700;">
+                  ×{{ $producto->unidades_por_presentacion }} uds.
+                </div>
+              @endif
+            </div>
+          </td>
+
           <td class="center">
             <span class="price-val">${{ number_format($producto->precio, 2) }}</span>
           </td>
@@ -76,53 +102,53 @@
             @endif
           </td>
           <td class="center">
-              <div class="actions-wrap" style="flex-direction:column; gap:0.5rem; align-items:center;">
+            <div class="actions-wrap" style="flex-direction:column; gap:0.5rem; align-items:center;">
 
-                {{-- Stock rápido --}}
-                <form action="{{ route('productos.updateStock', $producto) }}" method="POST"
-                      style="display:flex; gap:0.4rem; align-items:center;">
-                  @csrf @method('PATCH')
-                  <input type="number" name="stock" value="{{ $producto->stock }}"
-                        min="0" style="
-                          width:60px; text-align:center;
-                          background:rgba(255,255,255,0.04);
-                          border:1px solid rgba(255,255,255,0.1);
-                          border-radius:8px; color:#fff;
-                          font-family:inherit; font-size:0.8rem;
-                          padding:0.28rem 0.4rem; outline:none;">
-                  <button type="submit" class="action-btn" style="
-                          background:rgba(34,197,94,0.1);
-                          border-color:rgba(34,197,94,0.2);
-                          color:#86efac;">
-                    ✓
-                  </button>
-                </form>
+              {{-- Stock rápido --}}
+              <form action="{{ route('productos.updateStock', $producto) }}" method="POST"
+                    style="display:flex; gap:0.4rem; align-items:center;">
+                @csrf @method('PATCH')
+                <input type="number" name="stock" value="{{ $producto->stock }}"
+                      min="0" style="
+                        width:60px; text-align:center;
+                        background:rgba(255,255,255,0.04);
+                        border:1px solid rgba(255,255,255,0.1);
+                        border-radius:8px; color:#fff;
+                        font-family:inherit; font-size:0.8rem;
+                        padding:0.28rem 0.4rem; outline:none;">
+                <button type="submit" class="action-btn" style="
+                        background:rgba(34,197,94,0.1);
+                        border-color:rgba(34,197,94,0.2);
+                        color:#86efac;">
+                  ✓
+                </button>
+              </form>
 
-                {{-- Editar completo + Eliminar --}}
-                <div style="display:flex; gap:0.4rem;">
-                  <a href="{{ route('productos.edit', $producto) }}" class="action-btn" style="
-                      background:rgba(249,115,22,0.1);
-                      border-color:rgba(249,115,22,0.2);
-                      color:#fdba74;">
-                    ✏ Editar
-                  </a>
+              {{-- Editar completo + Eliminar --}}
+              <div style="display:flex; gap:0.4rem;">
+                <a href="{{ route('productos.edit', $producto) }}" class="action-btn" style="
+                    background:rgba(249,115,22,0.1);
+                    border-color:rgba(249,115,22,0.2);
+                    color:#fdba74;">
+                  ✏ Editar
+                </a>
 
-                  @if($producto->activo)
-                    <form action="{{ route('productos.destroy', $producto) }}" method="POST" class="form-delete">
-                      @csrf @method('DELETE')
-                      <button type="submit" class="action-btn danger">🗑</button>
-                    </form>
-                  @else
-                    <span class="no-action">Inactivo</span>
-                  @endif
-                </div>
-
+                @if($producto->activo)
+                  <form action="{{ route('productos.destroy', $producto) }}" method="POST" class="form-delete">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="action-btn danger">🗑</button>
+                  </form>
+                @else
+                  <span class="no-action">Inactivo</span>
+                @endif
               </div>
-            </td>
+
+            </div>
+          </td>
         </tr>
         @empty
         <tr>
-          <td colspan="7">
+          <td colspan="8">
             <div class="empty-state">
               <div class="empty-icon">📦</div>
               <div class="empty-title">Sin productos registrados</div>

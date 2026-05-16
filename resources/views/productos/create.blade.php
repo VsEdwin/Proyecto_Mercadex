@@ -70,7 +70,6 @@
         {{-- Categoría y Subcategoría --}}
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
 
-          {{-- Categoría padre --}}
           <div class="field-group">
             <label class="field-label" for="categoria_id">Categoría</label>
             <div class="field-wrap">
@@ -90,7 +89,6 @@
             @error('categoria_id') <div class="field-error">⚠ {{ $message }}</div> @enderror
           </div>
 
-          {{-- Subcategoría --}}
           <div class="field-group">
             <label class="field-label" for="subcategoria_id">Subcategoría</label>
             <div class="field-wrap">
@@ -124,19 +122,52 @@
           @error('proveedor_id') <div class="field-error">⚠ {{ $message }}</div> @enderror
         </div>
 
+        {{-- Presentación --}}
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+
+          <div class="field-group">
+            <label class="field-label" for="presentacion">Tipo de presentación</label>
+            <div class="field-wrap">
+              <select id="presentacion" name="presentacion" class="field-input"
+                style="padding-left:2.5rem; cursor:pointer; appearance:none; -webkit-appearance:none;"
+                onchange="updatePresentacion()">
+                <option value="unidad"  {{ old('presentacion', 'unidad') == 'unidad'  ? 'selected' : '' }}>📦 Unidad</option>
+                <option value="caja"    {{ old('presentacion') == 'caja'    ? 'selected' : '' }}>📫 Caja</option>
+                <option value="paquete" {{ old('presentacion') == 'paquete' ? 'selected' : '' }}>🎁 Paquete</option>
+              </select>
+              <span class="field-icon">🏷</span>
+            </div>
+            @error('presentacion') <div class="field-error">⚠ {{ $message }}</div> @enderror
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="unidades_por_presentacion">Unidades por presentación</label>
+            <div class="field-wrap">
+              <input type="number" id="unidades_por_presentacion" name="unidades_por_presentacion"
+                class="field-input" placeholder="Ej. 24" min="1"
+                value="{{ old('unidades_por_presentacion', 1) }}"
+                oninput="updatePresentacion()">
+              <span class="field-icon">🔢</span>
+            </div>
+            <p class="field-hint" id="presentacion-hint">1 unidad por presentación</p>
+            @error('unidades_por_presentacion') <div class="field-error">⚠ {{ $message }}</div> @enderror
+          </div>
+
+        </div>
+
         {{-- Stock, Costo y Precio --}}
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
 
           <div class="field-group">
-            <label class="field-label" for="stock">Stock</label>
+            <label class="field-label" for="stock" id="stock-label">Cantidad a ingresar</label>
             <div class="field-wrap">
               <input type="number" id="stock" name="stock" class="field-input"
                 placeholder="0" min="0"
                 value="{{ old('stock') }}" required
-                oninput="updatePreview()">
+                oninput="updatePresentacion(); updatePreview();">
               <span class="field-icon">🗂</span>
             </div>
-            <p class="field-hint">Unidades disponibles</p>
+            <p class="field-hint" id="stock-hint">Unidades disponibles</p>
             @error('stock') <div class="field-error">⚠ {{ $message }}</div> @enderror
           </div>
 
@@ -162,7 +193,7 @@
                 oninput="updatePreview()">
               <span class="input-prefix">$</span>
             </div>
-            <p class="field-hint">Precio al público</p>
+            <p class="field-hint">Precio al público por unidad</p>
             @error('precio') <div class="field-error">⚠ {{ $message }}</div> @enderror
           </div>
 
@@ -180,6 +211,14 @@
           <div class="preview-label">Vista previa</div>
           <div class="preview-name" id="prev-name">—</div>
           <div class="preview-desc" id="prev-desc">Sin descripción</div>
+          <div class="preview-row">
+            <span class="preview-row-label">Presentación</span>
+            <span class="preview-row-val" id="prev-presentacion">Unidad</span>
+          </div>
+          <div class="preview-row">
+            <span class="preview-row-label">Stock real</span>
+            <span class="preview-row-val" id="prev-stock-real" style="color:#f97316;">0 uds.</span>
+          </div>
           <div class="preview-row">
             <span class="preview-row-label">Costo</span>
             <span class="preview-row-val" id="prev-costo">$0.00</span>
@@ -218,7 +257,7 @@
 
 <script>
   // ── Subcategorías dinámicas ──────────────────────────
-  const subcatsEl    = document.getElementById('subcats-data');
+  const subcatsEl     = document.getElementById('subcats-data');
   const subcategorias = JSON.parse(subcatsEl.dataset.subcats);
   const subcatActual  = subcatsEl.dataset.subcatActual;
 
@@ -238,29 +277,67 @@
     });
   }
 
-  // Cargar subcategorías al inicio si ya hay categoría seleccionada
   const catSelect = document.getElementById('categoria_id');
   if (catSelect.value) cargarSubcategorias(catSelect);
 
-  // ── Vista previa ────────────────────────────────────
+  // ── Presentación ─────────────────────────────────────
+  const presentacionNombres = { unidad: 'Unidad', caja: 'Caja', paquete: 'Paquete' };
+  const presentacionIconos  = { unidad: '📦', caja: '📫', paquete: '🎁' };
+
+  function updatePresentacion() {
+    const tipo  = document.getElementById('presentacion').value;
+    const uds   = parseInt(document.getElementById('unidades_por_presentacion').value) || 1;
+    const cant  = parseInt(document.getElementById('stock').value) || 0;
+    const stockReal = cant * uds;
+
+    // Hint de presentación
+    document.getElementById('presentacion-hint').textContent =
+      uds === 1 ? '1 unidad por presentación'
+                : uds + ' unidades por ' + tipo;
+
+    // Label del stock
+    document.getElementById('stock-label').textContent =
+      tipo === 'unidad' ? 'Cantidad a ingresar'
+                        : 'Cantidad de ' + tipo + 's a ingresar';
+
+    // Hint del stock
+    document.getElementById('stock-hint').textContent =
+      tipo === 'unidad'
+        ? 'Unidades disponibles'
+        : 'Stock real: ' + stockReal + ' unidades (' + cant + ' ' + tipo + (cant !== 1 ? 's' : '') + ')';
+
+    // Vista previa presentación
+    document.getElementById('prev-presentacion').textContent =
+      presentacionIconos[tipo] + ' ' + presentacionNombres[tipo] +
+      (uds > 1 ? ' de ' + uds + ' uds.' : '');
+
+    // Vista previa stock real
+    document.getElementById('prev-stock-real').textContent = stockReal + ' uds. reales';
+    document.getElementById('prev-stock').textContent      = stockReal + ' uds.';
+  }
+
+  // ── Vista previa ─────────────────────────────────────
   function updatePreview() {
     const name     = document.getElementById('nombre').value.trim();
     const desc     = document.getElementById('descripcion').value.trim();
-    const stock    = document.getElementById('stock').value;
     const precio   = parseFloat(document.getElementById('precio').value) || 0;
     const costo    = parseFloat(document.getElementById('costo').value)  || 0;
     const ganancia = precio - costo;
 
-    document.getElementById('prev-name').textContent  = name  || '—';
-    document.getElementById('prev-desc').textContent  = desc  || 'Sin descripción';
-    document.getElementById('prev-stock').textContent = (stock !== '' ? stock : '0') + ' uds.';
+    document.getElementById('prev-name').textContent  = name || '—';
+    document.getElementById('prev-desc').textContent  = desc || 'Sin descripción';
     document.getElementById('prev-price').textContent = '$' + precio.toFixed(2);
     document.getElementById('prev-costo').textContent = '$' + costo.toFixed(2);
 
     const ganEl = document.getElementById('prev-ganancia');
     ganEl.textContent = '$' + ganancia.toFixed(2);
     ganEl.style.color = ganancia >= 0 ? '#22c55e' : '#ef4444';
+
+    updatePresentacion();
   }
+
+  // Inicializar al cargar
+  updatePresentacion();
 </script>
 
 @endsection
